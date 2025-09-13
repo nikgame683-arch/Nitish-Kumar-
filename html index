@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text to Emoji Converter</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; text-align: center; background: #fff; color: #000; transition: 0.3s; }
+    h1 { color: #ff6600; }
+    textarea, input { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; border: 1px solid #ccc; }
+    button { padding: 8px 15px; margin: 5px; border: none; border-radius: 5px; background: #ff6600; color: white; cursor: pointer; }
+    button:hover { background: #cc5200; }
+    #output { font-size: 18px; margin-top: 20px; background: #f9f9f9; padding: 15px; border-radius: 8px; }
+    .card { border: 1px solid #ddd; border-radius: 10px; padding: 15px; margin: 15px 0; background: #fafafa; }
+    ul { list-style: none; padding: 0; }
+    li { background: #f2f2f2; margin: 5px; padding: 8px; border-radius: 5px; display: flex; justify-content: space-between; align-items: center; }
+    .del-btn { background: red; padding: 5px 10px; border: none; border-radius: 5px; color: white; cursor: pointer; }
+    .del-btn:hover { background: darkred; }
+
+    /* 🌙 Dark mode styling */
+    body.dark { background: #121212; color: #eee; }
+    body.dark .card { background: #1e1e1e; border-color: #333; }
+    body.dark textarea, body.dark input { background: #2a2a2a; color: #fff; border: 1px solid #555; }
+    body.dark #output { background: #2a2a2a; color: #fff; }
+    body.dark li { background: #2f2f2f; }
+    body.dark button { background: #ff8800; }
+    body.dark button:hover { background: #cc6600; }
+  </style>
+</head>
+<body>
+  <h1>📝 Text → Emoji Converter 😃</h1>
+  <button onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
+  
+  <div class="card">
+    <textarea id="inputText" placeholder="Type your text here..."></textarea><br>
+    <button onclick="convertToEmoji()">Convert</button>
+    <button onclick="copyText()">📋 Copy</button>
+    <button onclick="shareWhatsApp()">📲 Share on WhatsApp</button>
+    <div id="output"></div>
+  </div>
+
+  <div class="card">
+    <h2>➕ Add Your Own Word → Emoji</h2>
+    <input type="text" id="newWord" placeholder="Enter word (e.g., coffee)">
+    <input type="text" id="newEmoji" placeholder="Enter emoji (e.g., ☕)">
+    <button onclick="addCustomEmoji()">Add</button>
+    <p id="customMsg" style="color:green;"></p>
+  </div>
+
+  <div class="card">
+    <h2>📋 Saved Custom Emojis</h2>
+    <ul id="customList">
+      <li>No custom emojis added yet.</li>
+    </ul>
+  </div>
+
+  <script>
+    let emojiMap = {
+      love: "❤️",
+      happy: "😃",
+      sad: "😢",
+      pizza: "🍕",
+      hello: "👋",
+      fire: "🔥",
+      money: "💰",
+      cat: "🐱",
+      dog: "🐶",
+      party: "🎉",
+      cool: "😎"
+    };
+
+    let customWords = {}; // store custom emojis
+
+    // Load saved custom emojis from localStorage
+    window.onload = function() {
+      let saved = localStorage.getItem("customEmojis");
+      if(saved){
+        customWords = JSON.parse(saved);
+        for(let w in customWords){
+          emojiMap[w] = customWords[w];
+        }
+        updateCustomList();
+      }
+    };
+
+    // Convert text to emoji
+    function convertToEmoji(){
+      let text = document.getElementById("inputText").value;
+      let words = text.split(" ");
+      let converted = words.map(word => {
+        let lower = word.toLowerCase();
+        return emojiMap[lower] ? emojiMap[lower] : word;
+      }).join(" ");
+      document.getElementById("output").innerHTML = converted;
+    }
+
+    // Copy result
+    function copyText(){
+      let text = document.getElementById("output").innerText;
+      if(text.trim() === "") { alert("Please convert text first!"); return; }
+      navigator.clipboard.writeText(text);
+      alert("Copied to clipboard!");
+    }
+
+    // Share on WhatsApp
+    function shareWhatsApp(){
+      let text = document.getElementById("output").innerText;
+      if(text.trim() === "") { alert("Please convert text first!"); return; }
+      let url = "https://wa.me/?text=" + encodeURIComponent(text);
+      window.open(url, "_blank");
+    }
+
+    // Add custom emoji mapping
+    function addCustomEmoji(){
+      let word = document.getElementById("newWord").value.trim().toLowerCase();
+      let emoji = document.getElementById("newEmoji").value.trim();
+      if(word === "" || emoji === "") {
+        alert("Please enter both word and emoji!");
+        return;
+      }
+      emojiMap[word] = emoji;
+      customWords[word] = emoji;
+      localStorage.setItem("customEmojis", JSON.stringify(customWords)); // save
+      document.getElementById("customMsg").innerText = `"${word}" added as ${emoji}`;
+      document.getElementById("newWord").value = "";
+      document.getElementById("newEmoji").value = "";
+      updateCustomList();
+    }
+
+    // Delete custom emoji
+    function deleteCustomEmoji(word){
+      delete customWords[word];
+      delete emojiMap[word];
+      localStorage.setItem("customEmojis", JSON.stringify(customWords)); // update save
+      updateCustomList();
+    }
+
+    // Update saved custom emojis list
+    function updateCustomList(){
+      let list = document.getElementById("customList");
+      list.innerHTML = "";
+      let keys = Object.keys(customWords);
+      if(keys.length === 0){
+        list.innerHTML = "<li>No custom emojis added yet.</li>";
+        return;
+      }
+      keys.forEach(word => {
+        let li = document.createElement("li");
+        li.innerHTML = word + " → " + customWords[word] + 
+          ` <button class="del-btn" onclick="deleteCustomEmoji('${word}')">❌ Delete</button>`;
+        list.appendChild(li);
+      });
+    }
+
+    // Toggle Dark Mode
+    function toggleDarkMode(){
+      document.body.classList.toggle("dark");
+    }
+  </script>
+</body>
+</html>
